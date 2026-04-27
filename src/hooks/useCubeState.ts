@@ -10,6 +10,7 @@ import type { MoveNotation, CubeState } from "../types/cube";
 
 export function useCubeState() {
   const state = useCubeStore((s) => s.cubeState);
+  const hasCustomComposition = useCubeStore((s) => s.hasCustomComposition);
   const moveCount = useCubeStore((s) => s.moveCount);
   const isAnimating = useCubeStore((s) => s.isAnimating);
   const currentMove = useCubeStore((s) => s.currentMove);
@@ -45,6 +46,7 @@ export function useCubeState() {
     moveCount,
     isAnimating,
     currentMove,
+    hasCustomComposition,
     applyMove,
     reset,
     scramble,

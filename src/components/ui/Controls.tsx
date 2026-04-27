@@ -13,11 +13,28 @@ interface ControlsProps {
 }
 
 const Controls: React.FC<ControlsProps> = ({ onEditCube }) => {
-  const { scramble, reset, isSolved, state } = useCubeState();
+  const { scramble, reset, isSolved, state, hasCustomComposition } =
+    useCubeState();
   const { startSolve, togglePlay, isPlaying, method, steps } = useSolver();
   const hasSolveCycle = steps.length > 0;
   const validation = validateCube(state);
   const canSolve = validation.valid && !isSolved() && !hasSolveCycle;
+
+  const confirmIfCustomComposition = (
+    actionLabel: string,
+    action: () => void,
+  ) => {
+    if (
+      hasCustomComposition &&
+      !window.confirm(
+        `La composition du cube a été personnalisée. Voulez-vous vraiment ${actionLabel} ?`,
+      )
+    ) {
+      return;
+    }
+
+    action();
+  };
 
   return (
     <div className="flex flex-wrap gap-3 rounded-lg bg-gray-100 p-4">
@@ -31,7 +48,9 @@ const Controls: React.FC<ControlsProps> = ({ onEditCube }) => {
 
       {/* Bouton Mélanger */}
       <button
-        onClick={() => scramble(20)}
+        onClick={() =>
+          confirmIfCustomComposition("mélanger le cube", () => scramble(20))
+        }
         className="w-full rounded bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 sm:w-auto"
         title="Générer un mélange aléatoire"
       >
@@ -40,7 +59,9 @@ const Controls: React.FC<ControlsProps> = ({ onEditCube }) => {
 
       {/* Bouton Reset */}
       <button
-        onClick={reset}
+        onClick={() =>
+          confirmIfCustomComposition("réinitialiser le cube", reset)
+        }
         className="w-full rounded bg-gray-600 px-4 py-2 text-white transition hover:bg-gray-700 sm:w-auto"
         title="Réinitialiser le cube"
       >

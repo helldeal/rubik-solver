@@ -2,7 +2,7 @@
  * Éditeur de cube - Permet de colorier manuellement chaque facette
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useCubeState } from "../../hooks/useCubeState";
 import type { CubeState, FaceColor } from "../../types/cube";
 import { validateCube } from "../../engine/cube/validator";
@@ -47,6 +47,38 @@ const FACE_INFO: Record<
   5: { center: "R", top: "W", inverted: true },
 };
 
+type SavedPreset = {
+  name: string;
+  state: CubeState;
+  updatedAt: number;
+};
+
+const PRESETS_STORAGE_KEY = "rubik-solver.cube-editor-presets";
+
+function cloneCubeState(state: CubeState): CubeState {
+  return state.map((face) => face.map((row) => [...row])) as CubeState;
+}
+
+function loadPresetsFromStorage(): SavedPreset[] {
+  try {
+    const rawValue = window.localStorage.getItem(PRESETS_STORAGE_KEY);
+    if (!rawValue) return [];
+
+    const parsed = JSON.parse(rawValue) as SavedPreset[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePresetsToStorage(presets: SavedPreset[]): void {
+  try {
+    window.localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(presets));
+  } catch {
+    // Ignore storage failures in private mode or disabled storage environments.
+  }
+}
+
 interface CubeEditorProps {
   onConfirm?: () => void;
   onCancel: () => void;
@@ -55,19 +87,65 @@ interface CubeEditorProps {
 const CubeEditor: React.FC<CubeEditorProps> = ({ onConfirm, onCancel }) => {
   const { state, setCustomState } = useCubeState();
   const [selectedColor, setSelectedColor] = useState<FaceColor>("W");
-  const [editedState, setEditedState] = useState<CubeState>(() => {
-    return state.map((face) => face.map((row) => [...row])) as CubeState;
-  });
+  const [editedState, setEditedState] = useState<CubeState>(() =>
+    cloneCubeState(state),
+  );
+  const [presetName, setPresetName] = useState("");
+  const [selectedPreset, setSelectedPreset] = useState<string>("");
+  const [presets, setPresets] = useState<SavedPreset[]>([]);
   const validation = useMemo(() => validateCube(editedState), [editedState]);
+
+  useEffect(() => {
+    const storedPresets = loadPresetsFromStorage();
+    setPresets(storedPresets);
+    if (storedPresets[0]) {
+      setSelectedPreset(storedPresets[0].name);
+    }
+  }, []);
 
   const handleFacetteClick = (
     faceIdx: number,
     rowIdx: number,
     colIdx: number,
   ) => {
-    const newState = editedState.map((face) => [...face]);
+    const newState = cloneCubeState(editedState);
     newState[faceIdx][rowIdx][colIdx] = selectedColor;
     setEditedState(newState);
+  };
+
+  const handleSavePreset = () => {
+    const trimmedName = presetName.trim() || `Preset ${presets.length + 1}`;
+    const nextPresets = [
+      {
+        name: trimmedName,
+        state: cloneCubeState(editedState),
+        updatedAt: Date.now(),
+      },
+      ...presets.filter((preset) => preset.name !== trimmedName),
+    ];
+
+    setPresets(nextPresets);
+    savePresetsToStorage(nextPresets);
+    setSelectedPreset(trimmedName);
+    setPresetName("");
+  };
+
+  const handleLoadPreset = (name: string) => {
+    const preset = presets.find((item) => item.name === name);
+    if (!preset) return;
+
+    setEditedState(cloneCubeState(preset.state));
+    setSelectedPreset(name);
+  };
+
+  const handleDeletePreset = (name: string) => {
+    const nextPresets = presets.filter((preset) => preset.name !== name);
+    setPresets(nextPresets);
+    savePresetsToStorage(nextPresets);
+
+    if (selectedPreset === name) {
+      setSelectedPreset(nextPresets[0]?.name ?? "");
+    }
   };
 
   const handleConfirm = () => {
@@ -78,8 +156,12 @@ const CubeEditor: React.FC<CubeEditorProps> = ({ onConfirm, onCancel }) => {
   };
 
   const counts = validation.details.colorCounts;
-  const getVisualIndices = (faceIdx: number) => {
+  const getVisualRowIndices = (faceIdx: number) => {
     return FACE_INFO[faceIdx].inverted ? [2, 1, 0] : [0, 1, 2];
+  };
+
+  const getVisualColIndices = () => {
+    return [0, 1, 2];
   };
 
   return (
@@ -137,8 +219,8 @@ const CubeEditor: React.FC<CubeEditorProps> = ({ onConfirm, onCancel }) => {
                     </span>
                   </div>
                   <div className="grid grid-cols-3 gap-1">
-                    {getVisualIndices(faceIdx).map((rowIdx) =>
-                      getVisualIndices(faceIdx).map((colIdx) => (
+                    {getVisualRowIndices(faceIdx).map((rowIdx) =>
+                      getVisualColIndices().map((colIdx) => (
                         <button
                           key={`${faceIdx}-${rowIdx}-${colIdx}`}
                           onClick={() =>
@@ -172,6 +254,65 @@ const CubeEditor: React.FC<CubeEditorProps> = ({ onConfirm, onCancel }) => {
                 Prévisualisation 3D
               </p>
               <CubePreview3D cubeState={editedState} />
+            </div>
+
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-slate-700">
+                  Presets d'édition
+                </p>
+                <span className="text-xs text-slate-500">
+                  {presets.length} enregistré{presets.length > 1 ? "s" : ""}
+                </span>
+              </div>
+
+              <div className="mt-3 flex gap-2">
+                <input
+                  value={presetName}
+                  onChange={(event) => setPresetName(event.target.value)}
+                  className="min-w-0 flex-1 rounded border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                  placeholder="Nom du preset"
+                />
+                <button
+                  onClick={handleSavePreset}
+                  className="rounded bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                >
+                  Sauver
+                </button>
+              </div>
+
+              {presets.length > 0 ? (
+                <div className="mt-3 space-y-2">
+                  {presets.map((preset) => (
+                    <div
+                      key={preset.name}
+                      className={`flex items-center justify-between gap-2 rounded border px-3 py-2 text-sm ${
+                        selectedPreset === preset.name
+                          ? "border-blue-300 bg-blue-50"
+                          : "border-slate-200 bg-white"
+                      }`}
+                    >
+                      <button
+                        onClick={() => handleLoadPreset(preset.name)}
+                        className="min-w-0 flex-1 truncate text-left font-medium text-slate-700"
+                      >
+                        {preset.name}
+                      </button>
+                      <button
+                        onClick={() => handleDeletePreset(preset.name)}
+                        className="rounded bg-rose-100 px-2 py-1 text-xs font-medium text-rose-700 hover:bg-rose-200"
+                        title="Supprimer le preset"
+                      >
+                        Suppr.
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-slate-500">
+                  Aucun preset sauvegardé.
+                </p>
+              )}
             </div>
 
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">

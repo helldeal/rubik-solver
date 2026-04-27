@@ -22,6 +22,7 @@ interface CubeStore {
   history: CubeState[];
   moveHistory: MoveNotation[];
   scrambleMoves: MoveNotation[];
+  hasCustomComposition: boolean;
 
   // Solver state
   solveSteps: SolveStep[];
@@ -60,6 +61,7 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
   history: [INITIAL_STATE],
   moveHistory: [],
   scrambleMoves: [],
+  hasCustomComposition: false,
 
   solveSteps: [],
   solveSnapshots: [INITIAL_STATE],
@@ -76,6 +78,7 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
       history: [state],
       moveHistory: [],
       scrambleMoves: [],
+      hasCustomComposition: true,
       solveSteps: [],
       solveSnapshots: [state],
       currentStepIndex: 0,
@@ -96,6 +99,7 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
       moveCount: get().moveCount + 1,
       history: [...history, newState],
       moveHistory: [...moveHistory, move],
+      hasCustomComposition: false,
     });
   },
 
@@ -106,6 +110,7 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
       history: [CubeModel.getSolvedState()],
       moveHistory: [],
       scrambleMoves: [],
+      hasCustomComposition: false,
       solveSteps: [],
       solveSnapshots: [CubeModel.getSolvedState()],
       currentStepIndex: 0,
@@ -127,6 +132,7 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
       history: [CubeModel.getSolvedState(), scrambledState],
       moveHistory: moves,
       scrambleMoves: moves,
+      hasCustomComposition: false,
       solveSteps: [],
       solveSnapshots: [scrambledState],
       currentStepIndex: 0,
