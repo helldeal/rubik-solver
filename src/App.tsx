@@ -30,11 +30,11 @@ const FaceLegend = () => (
         B: Back (arrière)
       </div>
       <div className="flex items-center gap-2">
-        <span className="inline-block w-3 h-3 rounded-full bg-blue-400" />
+        <span className="inline-block w-3 h-3 rounded-full bg-green-400" />
         L: Left (gauche)
       </div>
       <div className="flex items-center gap-2">
-        <span className="inline-block w-3 h-3 rounded-full bg-green-400" />
+        <span className="inline-block w-3 h-3 rounded-full bg-blue-400" />
         R: Right (droite)
       </div>
     </div>

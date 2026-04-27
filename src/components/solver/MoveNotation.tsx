@@ -11,12 +11,12 @@ interface MoveNotationProps {
 }
 
 const MOVE_COLORS: Record<string, string> = {
-  U: "bg-yellow-400",
-  D: "bg-white",
-  R: "bg-red-500",
-  L: "bg-orange-500",
-  F: "bg-green-600",
-  B: "bg-blue-600",
+  U: "bg-white text-gray-900 border border-gray-300",
+  D: "bg-yellow-400 text-gray-900",
+  R: "bg-blue-600",
+  L: "bg-green-600",
+  F: "bg-red-500",
+  B: "bg-orange-500",
   M: "bg-gray-400",
   E: "bg-gray-400",
   S: "bg-gray-400",
@@ -39,7 +39,7 @@ const MoveNotationDisplay: React.FC<MoveNotationProps> = ({
         return (
           <span
             key={idx}
-            className={`px-3 py-1 rounded font-semibold text-white transition ${bgColor} ${
+            className={`px-3 py-1 rounded font-semibold transition ${bgColor} ${
               isCurrentMove ? "ring-2 ring-orange-400 scale-110" : ""
             }`}
           >

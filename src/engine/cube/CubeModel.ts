@@ -7,8 +7,8 @@
  * 1 = Down (jaune)
  * 2 = Front (rouge)
  * 3 = Back (orange)
- * 4 = Left (bleu)
- * 5 = Right (vert)
+ * 4 = Left (vert)
+ * 5 = Right (bleu)
  */
 
 import type { FaceColor, CubeState, MoveNotation } from "../../types/cube";
@@ -40,15 +40,15 @@ const SOLVED_STATE: CubeState = [
     ["O", "O", "O"],
   ], // Back (orange)
   [
-    ["B", "B", "B"],
-    ["B", "B", "B"],
-    ["B", "B", "B"],
-  ], // Left (bleu)
+    ["G", "G", "G"],
+    ["G", "G", "G"],
+    ["G", "G", "G"],
+  ], // Left (vert)
   [
-    ["G", "G", "G"],
-    ["G", "G", "G"],
-    ["G", "G", "G"],
-  ], // Right (vert)
+    ["B", "B", "B"],
+    ["B", "B", "B"],
+    ["B", "B", "B"],
+  ], // Right (bleu)
 ];
 
 export class CubeModel {

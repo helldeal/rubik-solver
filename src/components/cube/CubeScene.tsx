@@ -21,8 +21,8 @@ const FaceLabels: React.FC = () => {
     { face: "D", position: [0, 0, -2.05], color: "#ffe066" },
     { face: "F", position: [0, -2.05, 0], color: "#ff6b6b" },
     { face: "B", position: [0, 2.05, 0], color: "#f4a261" },
-    { face: "L", position: [-2.05, 0, 0], color: "#4dabf7" },
-    { face: "R", position: [2.05, 0, 0], color: "#51cf66" },
+    { face: "L", position: [-2.05, 0, 0], color: "#51cf66" },
+    { face: "R", position: [2.05, 0, 0], color: "#4dabf7" },
   ];
 
   return (
