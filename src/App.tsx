@@ -1,5 +1,6 @@
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import Layout from "./components/layout/Layout";
+import CubeEditor from "./components/cube/CubeEditor";
 import CubeScene from "./components/cube/CubeScene";
 import Controls from "./components/ui/Controls";
 import ProgressBar from "./components/ui/ProgressBar";
@@ -22,19 +23,19 @@ const FaceLegend = () => (
         D: Down (bas)
       </div>
       <div className="flex items-center gap-2">
-        <span className="inline-block w-3 h-3 rounded-full bg-red-400" />
+        <span className="inline-block w-3 h-3 rounded-full bg-green-400" />
         F: Front (avant)
       </div>
       <div className="flex items-center gap-2">
-        <span className="inline-block w-3 h-3 rounded-full bg-orange-400" />
+        <span className="inline-block w-3 h-3 rounded-full bg-blue-400" />
         B: Back (arrière)
       </div>
       <div className="flex items-center gap-2">
-        <span className="inline-block w-3 h-3 rounded-full bg-green-400" />
+        <span className="inline-block w-3 h-3 rounded-full bg-orange-400" />
         L: Left (gauche)
       </div>
       <div className="flex items-center gap-2">
-        <span className="inline-block w-3 h-3 rounded-full bg-blue-400" />
+        <span className="inline-block w-3 h-3 rounded-full bg-red-400" />
         R: Right (droite)
       </div>
     </div>
@@ -43,12 +44,13 @@ const FaceLegend = () => (
 
 function App() {
   useAnimationPlayer(); // Démarrer le lecteur d'animation
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
 
   return (
     <Layout>
-      <div className="flex flex-col lg:flex-row h-full gap-4 p-4">
+      <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden p-3 sm:p-4 xl:grid xl:grid-cols-[minmax(0,1fr)_24rem]">
         {/* Zone du cube 3D */}
-        <div className="flex-1 min-h-[400px] lg:min-h-full bg-gray-100 rounded-lg shadow-lg overflow-hidden">
+        <div className="min-h-0 flex-1 overflow-hidden rounded-xl bg-slate-100 shadow-lg">
           <Suspense
             fallback={
               <div className="w-full h-full flex items-center justify-center">
@@ -61,7 +63,7 @@ function App() {
         </div>
 
         {/* Panneau latéral */}
-        <div className="w-full lg:w-96 flex flex-col gap-4">
+        <div className="flex w-full min-h-0 flex-col gap-4 overflow-y-auto xl:min-w-0 xl:pl-0">
           {/* Panneau de résolution */}
           <SolverPanel />
 
@@ -77,9 +79,16 @@ function App() {
           <FaceLegend />
 
           {/* Contrôles */}
-          <Controls />
+          <Controls onEditCube={() => setIsEditorOpen(true)} />
         </div>
       </div>
+
+      {isEditorOpen && (
+        <CubeEditor
+          onCancel={() => setIsEditorOpen(false)}
+          onConfirm={() => setIsEditorOpen(false)}
+        />
+      )}
     </Layout>
   );
 }

@@ -2,10 +2,11 @@
  * Éditeur de cube - Permet de colorier manuellement chaque facette
  */
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useCubeState } from "../../hooks/useCubeState";
 import type { CubeState, FaceColor } from "../../types/cube";
-import { CubeModel } from "../../engine/cube/CubeModel";
+import { validateCube } from "../../engine/cube/validator";
+import CubePreview3D from "./CubePreview3D";
 
 const COLORS: FaceColor[] = ["W", "Y", "R", "O", "B", "G"];
 const COLOR_NAMES: Record<FaceColor, string> = {
@@ -34,6 +35,18 @@ const FACE_NAMES: string[] = [
   "Droite (R)",
 ];
 
+const FACE_INFO: Record<
+  number,
+  { center: FaceColor; top: FaceColor; inverted: boolean }
+> = {
+  0: { center: "W", top: "B", inverted: false },
+  1: { center: "Y", top: "G", inverted: false },
+  2: { center: "G", top: "W", inverted: true },
+  3: { center: "B", top: "W", inverted: true },
+  4: { center: "O", top: "W", inverted: true },
+  5: { center: "R", top: "W", inverted: true },
+};
+
 interface CubeEditorProps {
   onConfirm?: () => void;
   onCancel: () => void;
@@ -43,9 +56,9 @@ const CubeEditor: React.FC<CubeEditorProps> = ({ onConfirm, onCancel }) => {
   const { state, setCustomState } = useCubeState();
   const [selectedColor, setSelectedColor] = useState<FaceColor>("W");
   const [editedState, setEditedState] = useState<CubeState>(() => {
-    const model = new CubeModel(state);
-    return model.getState();
+    return state.map((face) => face.map((row) => [...row])) as CubeState;
   });
+  const validation = useMemo(() => validateCube(editedState), [editedState]);
 
   const handleFacetteClick = (
     faceIdx: number,
@@ -64,73 +77,164 @@ const CubeEditor: React.FC<CubeEditorProps> = ({ onConfirm, onCancel }) => {
     }
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto">
-      <div className="bg-white rounded-lg shadow-lg p-6 max-w-6xl w-full my-4">
-        <h2 className="text-2xl font-bold mb-4">Éditeur du Cube</h2>
+  const counts = validation.details.colorCounts;
+  const getVisualIndices = (faceIdx: number) => {
+    return FACE_INFO[faceIdx].inverted ? [2, 1, 0] : [0, 1, 2];
+  };
 
-        {/* Palette de couleurs */}
-        <div className="mb-6">
-          <p className="text-sm font-semibold mb-2">
-            Sélectionnez une couleur:
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-3 sm:p-4">
+      <div className="my-4 flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="border-b border-slate-200 px-4 py-4 sm:px-6">
+          <h2 className="text-2xl font-bold text-slate-900">Éditeur du Cube</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Clique une facelette, choisis une couleur, puis complète le cube
+            pour garder exactement 9 stickers de chaque couleur.
           </p>
-          <div className="flex gap-2">
-            {COLORS.map((color) => (
-              <button
-                key={color}
-                onClick={() => setSelectedColor(color)}
-                className={`w-12 h-12 rounded border-2 transition-all ${
-                  selectedColor === color
-                    ? "border-gray-800 scale-110"
-                    : "border-gray-300"
-                }`}
-                style={{ backgroundColor: COLOR_HEX[color] }}
-                title={COLOR_NAMES[color]}
-              />
-            ))}
-          </div>
         </div>
 
-        {/* Grille d'édition */}
-        <div className="mb-6 grid grid-cols-2 md:grid-cols-3 gap-4">
-          {editedState.map((face, faceIdx) => (
-            <div
-              key={faceIdx}
-              className="border-2 border-gray-300 rounded-lg p-3 bg-gray-50"
-            >
-              <p className="text-sm font-semibold mb-2">
-                {FACE_NAMES[faceIdx]}
+        <div className="grid flex-1 gap-6 overflow-y-auto px-4 py-4 sm:px-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+          <div>
+            <div className="mb-5">
+              <p className="mb-2 text-sm font-semibold text-slate-700">
+                Sélectionnez une couleur
               </p>
-              <div className="grid grid-cols-3 gap-1">
-                {face.map((row, rowIdx) =>
-                  row.map((color, colIdx) => (
-                    <button
-                      key={`${faceIdx}-${rowIdx}-${colIdx}`}
-                      onClick={() =>
-                        handleFacetteClick(faceIdx, rowIdx, colIdx)
-                      }
-                      className="w-10 h-10 rounded border border-gray-400 hover:scale-110 transition-transform cursor-pointer"
-                      style={{ backgroundColor: COLOR_HEX[color] }}
-                      title={COLOR_NAMES[color]}
-                    />
-                  )),
-                )}
+              <div className="flex flex-wrap gap-2">
+                {COLORS.map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => setSelectedColor(color)}
+                    className={`h-12 w-12 rounded border-2 transition-all ${
+                      selectedColor === color
+                        ? "border-slate-900 scale-110"
+                        : "border-slate-300"
+                    }`}
+                    style={{ backgroundColor: COLOR_HEX[color] }}
+                    title={COLOR_NAMES[color]}
+                    aria-label={COLOR_NAMES[color]}
+                  />
+                ))}
               </div>
             </div>
-          ))}
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {editedState.map((face, faceIdx) => (
+                <div
+                  key={faceIdx}
+                  className="rounded-lg border border-slate-200 bg-slate-50 p-3 shadow-sm"
+                >
+                  <div className="mb-2 flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-700">
+                        {FACE_NAMES[faceIdx]}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {COLOR_NAMES[FACE_INFO[faceIdx].center]}
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-slate-200 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+                      Au-dessus: {COLOR_NAMES[FACE_INFO[faceIdx].top]}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    {getVisualIndices(faceIdx).map((rowIdx) =>
+                      getVisualIndices(faceIdx).map((colIdx) => (
+                        <button
+                          key={`${faceIdx}-${rowIdx}-${colIdx}`}
+                          onClick={() =>
+                            handleFacetteClick(faceIdx, rowIdx, colIdx)
+                          }
+                          disabled={rowIdx === 1 && colIdx === 1}
+                          className="aspect-square w-full rounded border border-slate-400 transition-transform hover:scale-110 disabled:cursor-not-allowed disabled:hover:scale-100"
+                          style={{
+                            backgroundColor: COLOR_HEX[face[rowIdx][colIdx]],
+                            boxShadow:
+                              rowIdx === 1 && colIdx === 1
+                                ? "inset 0 0 0 2px rgba(15, 23, 42, 0.72)"
+                                : undefined,
+                            opacity: rowIdx === 1 && colIdx === 1 ? 0.96 : 1,
+                          }}
+                          title={`${FACE_NAMES[faceIdx]} - ${COLOR_NAMES[face[rowIdx][colIdx]]}`}
+                          aria-disabled={rowIdx === 1 && colIdx === 1}
+                          aria-label={`${FACE_NAMES[faceIdx]} ${rowIdx + 1}-${colIdx + 1}`}
+                        />
+                      )),
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <aside className="flex flex-col gap-4">
+            <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+              <p className="mb-2 text-sm font-semibold text-slate-700">
+                Prévisualisation 3D
+              </p>
+              <CubePreview3D cubeState={editedState} />
+            </div>
+
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-semibold text-slate-700">
+                Validation en direct
+              </p>
+              <p
+                className={`mt-2 rounded px-3 py-2 text-sm ${
+                  validation.valid
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "bg-amber-50 text-amber-800"
+                }`}
+              >
+                {validation.valid
+                  ? "Cube valide, tu peux confirmer."
+                  : (validation.error ?? "Cube invalide")}
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <p className="text-sm font-semibold text-slate-700">
+                Répartition des couleurs
+              </p>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
+                {COLORS.map((color) => (
+                  <div
+                    key={color}
+                    className="flex items-center justify-between rounded border border-slate-200 px-3 py-2"
+                  >
+                    <span className="flex items-center gap-2 text-slate-700">
+                      <span
+                        className="inline-block h-3 w-3 rounded-full border border-slate-300"
+                        style={{ backgroundColor: COLOR_HEX[color] }}
+                      />
+                      {color}
+                    </span>
+                    <span
+                      className={
+                        counts[color] === 9
+                          ? "text-emerald-600"
+                          : "text-rose-600"
+                      }
+                    >
+                      {counts[color]}/9
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </aside>
         </div>
 
-        {/* Boutons */}
-        <div className="flex gap-4 justify-end">
+        <div className="flex flex-col-reverse gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row sm:justify-end sm:px-6">
           <button
             onClick={onCancel}
-            className="px-6 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+            className="rounded bg-slate-200 px-6 py-2 font-medium text-slate-800 transition hover:bg-slate-300"
           >
             Annuler
           </button>
           <button
             onClick={handleConfirm}
-            className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            disabled={!validation.valid}
+            className="rounded bg-blue-600 px-6 py-2 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
           >
             Confirmer
           </button>

@@ -5,10 +5,10 @@
  * Indexation des faces:
  * 0 = Up (blanc)
  * 1 = Down (jaune)
- * 2 = Front (rouge)
- * 3 = Back (orange)
- * 4 = Left (vert)
- * 5 = Right (bleu)
+ * 2 = Front (vert)
+ * 3 = Back (bleu)
+ * 4 = Left (orange)
+ * 5 = Right (rouge)
  */
 
 import type { FaceColor, CubeState, MoveNotation } from "../../types/cube";
@@ -30,25 +30,25 @@ const SOLVED_STATE: CubeState = [
     ["Y", "Y", "Y"],
   ], // Down (jaune)
   [
-    ["R", "R", "R"],
-    ["R", "R", "R"],
-    ["R", "R", "R"],
-  ], // Front (rouge)
-  [
-    ["O", "O", "O"],
-    ["O", "O", "O"],
-    ["O", "O", "O"],
-  ], // Back (orange)
-  [
     ["G", "G", "G"],
     ["G", "G", "G"],
     ["G", "G", "G"],
-  ], // Left (vert)
+  ], // Front (vert)
   [
     ["B", "B", "B"],
     ["B", "B", "B"],
     ["B", "B", "B"],
-  ], // Right (bleu)
+  ], // Back (bleu)
+  [
+    ["O", "O", "O"],
+    ["O", "O", "O"],
+    ["O", "O", "O"],
+  ], // Left (orange)
+  [
+    ["R", "R", "R"],
+    ["R", "R", "R"],
+    ["R", "R", "R"],
+  ], // Right (rouge)
 ];
 
 export class CubeModel {

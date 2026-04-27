@@ -19,7 +19,7 @@ const SpeedSlider: React.FC = () => {
 
   return (
     <div className="flex items-center gap-4 p-4 bg-gray-100 rounded-lg">
-      <label className="text-sm font-semibold">Vitesse d'animation:</label>
+      <label className="text-sm font-semibold">Vitesse:</label>
       <div className="flex gap-2">
         {speeds.map((speed) => (
           <button

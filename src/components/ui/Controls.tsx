@@ -6,18 +6,33 @@
 import React from "react";
 import { useCubeState } from "../../hooks/useCubeState";
 import { useSolver } from "../../hooks/useSolver";
+import { validateCube } from "../../engine/cube/validator";
 
-const Controls: React.FC = () => {
-  const { scramble, reset, isSolved } = useCubeState();
+interface ControlsProps {
+  onEditCube: () => void;
+}
+
+const Controls: React.FC<ControlsProps> = ({ onEditCube }) => {
+  const { scramble, reset, isSolved, state } = useCubeState();
   const { startSolve, togglePlay, isPlaying, method, steps } = useSolver();
   const hasSolveCycle = steps.length > 0;
+  const validation = validateCube(state);
+  const canSolve = validation.valid && !isSolved() && !hasSolveCycle;
 
   return (
-    <div className="flex flex-wrap gap-3 p-4 bg-gray-100 rounded-lg">
+    <div className="flex flex-wrap gap-3 rounded-lg bg-gray-100 p-4">
+      <button
+        onClick={onEditCube}
+        className="w-full rounded bg-slate-800 px-4 py-2 text-white transition hover:bg-slate-900 sm:w-auto"
+        title="Modifier les couleurs du cube"
+      >
+        ✏️ Éditer le cube
+      </button>
+
       {/* Bouton Mélanger */}
       <button
         onClick={() => scramble(20)}
-        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+        className="w-full rounded bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 sm:w-auto"
         title="Générer un mélange aléatoire"
       >
         🔀 Mélanger
@@ -26,7 +41,7 @@ const Controls: React.FC = () => {
       {/* Bouton Reset */}
       <button
         onClick={reset}
-        className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition"
+        className="w-full rounded bg-gray-600 px-4 py-2 text-white transition hover:bg-gray-700 sm:w-auto"
         title="Réinitialiser le cube"
       >
         ↺ Réinitialiser
@@ -35,27 +50,37 @@ const Controls: React.FC = () => {
       {/* Bouton Résoudre */}
       <button
         onClick={() => startSolve(method)}
-        disabled={isSolved() || hasSolveCycle}
+        disabled={!canSolve}
         className={`px-4 py-2 rounded text-white transition ${
           isSolved()
             ? "bg-green-600 hover:bg-green-700"
-            : hasSolveCycle
-              ? "bg-orange-400 cursor-not-allowed"
-              : "bg-orange-600 hover:bg-orange-700"
+            : !validation.valid
+              ? "bg-red-500 cursor-not-allowed"
+              : hasSolveCycle
+                ? "bg-orange-400 cursor-not-allowed"
+                : "bg-orange-600 hover:bg-orange-700"
         }`}
         title={
-          hasSolveCycle
-            ? "Un cycle de résolution existe déjà"
-            : "Démarrer la résolution"
+          !validation.valid
+            ? (validation.error ?? "Cube invalide")
+            : hasSolveCycle
+              ? "Un cycle de résolution existe déjà"
+              : "Démarrer la résolution"
         }
       >
-        {isSolved() ? "✓ Résolu" : hasSolveCycle ? "Cycle prêt" : "🎯 Résoudre"}
+        {isSolved()
+          ? "✓ Résolu"
+          : !validation.valid
+            ? "Cube invalide"
+            : hasSolveCycle
+              ? "Cycle prêt"
+              : "🎯 Résoudre"}
       </button>
 
       {/* Bouton Play/Pause */}
       <button
         onClick={togglePlay}
-        className={`px-4 py-2 rounded text-white transition ${
+        className={`w-full rounded px-4 py-2 text-white transition sm:w-auto ${
           isPlaying
             ? "bg-red-600 hover:bg-red-700"
             : "bg-green-600 hover:bg-green-700"
@@ -64,6 +89,12 @@ const Controls: React.FC = () => {
       >
         {isPlaying ? "⏸ Pause" : "▶ Lecture"}
       </button>
+
+      {!validation.valid && (
+        <p className="w-full rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {validation.error}
+        </p>
+      )}
     </div>
   );
 };

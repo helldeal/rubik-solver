@@ -19,10 +19,10 @@ const FaceLabels: React.FC = () => {
   }> = [
     { face: "U", position: [0, 0, 2.05], color: "#f8f9fa" },
     { face: "D", position: [0, 0, -2.05], color: "#ffe066" },
-    { face: "F", position: [0, -2.05, 0], color: "#ff6b6b" },
-    { face: "B", position: [0, 2.05, 0], color: "#f4a261" },
-    { face: "L", position: [-2.05, 0, 0], color: "#51cf66" },
-    { face: "R", position: [2.05, 0, 0], color: "#4dabf7" },
+    { face: "F", position: [0, -2.05, 0], color: "#51cf66" },
+    { face: "B", position: [0, 2.05, 0], color: "#4dabf7" },
+    { face: "L", position: [-2.05, 0, 0], color: "#f4a261" },
+    { face: "R", position: [2.05, 0, 0], color: "#ff6b6b" },
   ];
 
   return (
@@ -47,14 +47,16 @@ const CubeScene: React.FC = () => {
   const { state, currentMove, isAnimating } = useCubeState();
   const cameraRef = useRef<THREE.PerspectiveCamera>(null);
   const animationSpeed = useCubeStore((s) => s.animationSpeed);
+  const sceneRotation: [number, number, number] = [-Math.PI / 2, 0, 0];
 
   return (
-    <Canvas
-      className="w-full h-full"
-      camera={{ position: [3, 3, 3], fov: 75 }}
-      gl={{ antialias: true }}
-    >
-      <PerspectiveCamera ref={cameraRef} />
+    <Canvas className="w-full h-full" gl={{ antialias: true }}>
+      <PerspectiveCamera
+        ref={cameraRef}
+        makeDefault
+        position={[4.8, 4.8, 4.8]}
+        fov={75}
+      />
 
       {/* Éclairage */}
       <ambientLight intensity={0.8} />
@@ -67,15 +69,17 @@ const CubeScene: React.FC = () => {
       <directionalLight position={[-10, -10, -10]} intensity={0.3} />
 
       {/* Cube maillage */}
-      <CubeMesh
-        cubeState={state}
-        move={currentMove}
-        isAnimating={isAnimating}
-        animationSpeed={animationSpeed}
-      />
+      <group rotation={sceneRotation}>
+        <CubeMesh
+          cubeState={state}
+          move={currentMove}
+          isAnimating={isAnimating}
+          animationSpeed={animationSpeed}
+        />
 
-      {/* Repères des faces */}
-      <FaceLabels />
+        {/* Repères des faces */}
+        <FaceLabels />
+      </group>
 
       {/* Contrôles d'orbite */}
       <OrbitControls
@@ -83,6 +87,7 @@ const CubeScene: React.FC = () => {
         enableZoom
         enableDamping
         dampingFactor={0.05}
+        target={[0, 0, 0]}
       />
     </Canvas>
   );

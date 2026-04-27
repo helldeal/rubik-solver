@@ -12,7 +12,7 @@ const SolverPanel: React.FC = () => {
 
   if (steps.length === 0) {
     return (
-      <div className="w-full max-w-sm bg-white rounded-lg shadow-lg p-6">
+      <div className="w-full rounded-lg bg-white p-6 shadow-lg">
         <p className="text-gray-500 text-center">
           Lisez une résolution pour voir les étapes
         </p>
@@ -21,7 +21,7 @@ const SolverPanel: React.FC = () => {
   }
 
   return (
-    <div className="w-full max-w-sm bg-white rounded-lg shadow-lg overflow-hidden flex flex-col max-h-screen">
+    <div className="flex w-full flex-col overflow-hidden rounded-lg bg-white shadow-lg xl:max-h-[calc(100dvh-15rem)]">
       {/* En-tête */}
       <div className="bg-blue-600 text-white p-4">
         <h2 className="text-xl font-bold">
@@ -43,18 +43,18 @@ const SolverPanel: React.FC = () => {
       </div>
 
       {/* Contrôles de navigation */}
-      <div className="border-t p-4 flex gap-2">
+      <div className="flex gap-2 border-t p-4">
         <button
           onClick={previousStep}
           disabled={currentStepIndex === 0}
-          className="flex-1 px-3 py-2 bg-gray-300 text-gray-800 rounded disabled:opacity-50 hover:disabled:cursor-not-allowed"
+          className="flex-1 rounded bg-gray-300 px-3 py-2 text-gray-800 disabled:opacity-50 hover:disabled:cursor-not-allowed"
         >
           ← Précédent
         </button>
         <button
           onClick={nextStep}
           disabled={currentStepIndex === steps.length - 1}
-          className="flex-1 px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-50 hover:disabled:cursor-not-allowed"
+          className="flex-1 rounded bg-blue-600 px-3 py-2 text-white disabled:opacity-50 hover:disabled:cursor-not-allowed"
         >
           Suivant →
         </button>
