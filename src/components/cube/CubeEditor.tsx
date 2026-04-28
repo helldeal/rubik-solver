@@ -2,7 +2,7 @@
  * Éditeur de cube - Permet de colorier manuellement chaque facette
  */
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useCubeState } from "../../hooks/useCubeState";
 import type { CubeState, FaceColor } from "../../types/cube";
 import { validateCube } from "../../engine/cube/validator";
@@ -61,6 +61,8 @@ function cloneCubeState(state: CubeState): CubeState {
 
 function loadPresetsFromStorage(): SavedPreset[] {
   try {
+    if (typeof window === "undefined") return [];
+
     const rawValue = window.localStorage.getItem(PRESETS_STORAGE_KEY);
     if (!rawValue) return [];
 
@@ -91,17 +93,13 @@ const CubeEditor: React.FC<CubeEditorProps> = ({ onConfirm, onCancel }) => {
     cloneCubeState(state),
   );
   const [presetName, setPresetName] = useState("");
-  const [selectedPreset, setSelectedPreset] = useState<string>("");
-  const [presets, setPresets] = useState<SavedPreset[]>([]);
+  const [presets, setPresets] = useState<SavedPreset[]>(() =>
+    loadPresetsFromStorage(),
+  );
+  const [selectedPreset, setSelectedPreset] = useState<string>(
+    () => presets[0]?.name ?? "",
+  );
   const validation = useMemo(() => validateCube(editedState), [editedState]);
-
-  useEffect(() => {
-    const storedPresets = loadPresetsFromStorage();
-    setPresets(storedPresets);
-    if (storedPresets[0]) {
-      setSelectedPreset(storedPresets[0].name);
-    }
-  }, []);
 
   const handleFacetteClick = (
     faceIdx: number,
