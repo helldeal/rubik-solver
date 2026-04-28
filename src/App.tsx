@@ -7,6 +7,8 @@ import ProgressBar from "./components/ui/ProgressBar";
 import SpeedSlider from "./components/ui/SpeedSlider";
 import SolverPanel from "./components/solver/SolverPanel";
 import { useAnimationPlayer } from "./hooks/useAnimationPlayer";
+import { useSolver } from "./hooks/useSolver";
+import { useCubeStore } from "./store/cubeStore";
 
 const FaceLegend = () => (
   <div className="bg-white rounded-lg shadow-lg p-4">
@@ -45,6 +47,12 @@ const FaceLegend = () => (
 function App() {
   useAnimationPlayer(); // Démarrer le lecteur d'animation
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const { method } = useSolver();
+
+  const handleEditorConfirm = () => {
+    setIsEditorOpen(false);
+    void useCubeStore.getState().startSolve(method);
+  };
 
   return (
     <Layout>
@@ -86,7 +94,7 @@ function App() {
       {isEditorOpen && (
         <CubeEditor
           onCancel={() => setIsEditorOpen(false)}
-          onConfirm={() => setIsEditorOpen(false)}
+          onConfirm={handleEditorConfirm}
         />
       )}
     </Layout>

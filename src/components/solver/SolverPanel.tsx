@@ -7,8 +7,18 @@ import { useSolver } from "../../hooks/useSolver";
 import StepCard from "./StepCard";
 
 const SolverPanel: React.FC = () => {
-  const { steps, currentStepIndex, nextStep, previousStep, setCurrentStep } =
+  const { steps, currentStepIndex, nextStep, previousStep, setCurrentStep, isSolving } =
     useSolver();
+
+  if (isSolving) {
+    return (
+      <div className="w-full rounded-lg bg-white p-6 shadow-lg">
+        <p className="text-center text-gray-500">
+          Calcul de la resolution...
+        </p>
+      </div>
+    );
+  }
 
   if (steps.length === 0) {
     return (

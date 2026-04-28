@@ -1,24 +1,22 @@
 /**
- * Contrôles principaux du cube
- * Boutons: Random, Reset, Solve, Play/Pause
+ * Controles principaux du cube.
  */
 
 import React from "react";
 import { useCubeState } from "../../hooks/useCubeState";
 import { useSolver } from "../../hooks/useSolver";
 import { validateCube } from "../../engine/cube/validator";
+import { useCubeStore } from "../../store/cubeStore";
 
 interface ControlsProps {
   onEditCube: () => void;
 }
 
 const Controls: React.FC<ControlsProps> = ({ onEditCube }) => {
-  const { scramble, reset, isSolved, state, hasCustomComposition } =
-    useCubeState();
-  const { startSolve, togglePlay, isPlaying, method, steps } = useSolver();
-  const hasSolveCycle = steps.length > 0;
+  const { reset, state, hasCustomComposition } = useCubeState();
+  const { togglePlay, isPlaying, method, steps, isSolving } = useSolver();
   const validation = validateCube(state);
-  const canSolve = validation.valid && !isSolved() && !hasSolveCycle;
+  const hasSolveCycle = steps.length > 0;
 
   const confirmIfCustomComposition = (
     actionLabel: string,
@@ -27,13 +25,20 @@ const Controls: React.FC<ControlsProps> = ({ onEditCube }) => {
     if (
       hasCustomComposition &&
       !window.confirm(
-        `La composition du cube a été personnalisée. Voulez-vous vraiment ${actionLabel} ?`,
+        `La composition du cube a ete personnalisee. Voulez-vous vraiment ${actionLabel} ?`,
       )
     ) {
       return;
     }
 
     action();
+  };
+
+  const handleScramble = () => {
+    confirmIfCustomComposition("melanger le cube", () => {
+      useCubeStore.getState().scrambleCube(20);
+      void useCubeStore.getState().startSolve(method);
+    });
   };
 
   return (
@@ -43,73 +48,61 @@ const Controls: React.FC<ControlsProps> = ({ onEditCube }) => {
         className="w-full rounded bg-slate-800 px-4 py-2 text-white transition hover:bg-slate-900 sm:w-auto"
         title="Modifier les couleurs du cube"
       >
-        ✏️ Éditer le cube
+        Editer le cube
       </button>
 
-      {/* Bouton Mélanger */}
       <button
-        onClick={() =>
-          confirmIfCustomComposition("mélanger le cube", () => scramble(20))
-        }
+        onClick={handleScramble}
         className="w-full rounded bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 sm:w-auto"
-        title="Générer un mélange aléatoire"
+        title="Generer un melange aleatoire"
       >
-        🔀 Mélanger
+        Melanger
       </button>
 
-      {/* Bouton Reset */}
       <button
         onClick={() =>
-          confirmIfCustomComposition("réinitialiser le cube", reset)
+          confirmIfCustomComposition("reinitialiser le cube", reset)
         }
         className="w-full rounded bg-gray-600 px-4 py-2 text-white transition hover:bg-gray-700 sm:w-auto"
-        title="Réinitialiser le cube"
+        title="Reinitialiser le cube"
       >
-        ↺ Réinitialiser
+        Reinitialiser
       </button>
 
-      {/* Bouton Résoudre */}
-      <button
-        onClick={() => startSolve(method)}
-        disabled={!canSolve}
-        className={`px-4 py-2 rounded text-white transition ${
-          isSolved()
-            ? "bg-green-600 hover:bg-green-700"
-            : !validation.valid
-              ? "bg-red-500 cursor-not-allowed"
-              : hasSolveCycle
-                ? "bg-orange-400 cursor-not-allowed"
-                : "bg-orange-600 hover:bg-orange-700"
-        }`}
-        title={
-          !validation.valid
-            ? (validation.error ?? "Cube invalide")
-            : hasSolveCycle
-              ? "Un cycle de résolution existe déjà"
-              : "Démarrer la résolution"
-        }
-      >
-        {isSolved()
-          ? "✓ Résolu"
-          : !validation.valid
-            ? "Cube invalide"
-            : hasSolveCycle
-              ? "Cycle prêt"
-              : "🎯 Résoudre"}
-      </button>
-
-      {/* Bouton Play/Pause */}
       <button
         onClick={togglePlay}
+        disabled={!hasSolveCycle || isSolving}
         className={`w-full rounded px-4 py-2 text-white transition sm:w-auto ${
-          isPlaying
-            ? "bg-red-600 hover:bg-red-700"
-            : "bg-green-600 hover:bg-green-700"
+          !hasSolveCycle || isSolving
+            ? "cursor-not-allowed bg-gray-400"
+            : isPlaying
+              ? "bg-red-600 hover:bg-red-700"
+              : "bg-green-600 hover:bg-green-700"
         }`}
-        title={isPlaying ? "Pause" : "Lecture"}
+        title={
+          isSolving
+            ? "Resolution en calcul"
+            : hasSolveCycle
+            ? isPlaying
+              ? "Pause"
+              : "Lecture"
+            : "Melange ou valide un cube custom pour generer une resolution"
+        }
       >
-        {isPlaying ? "⏸ Pause" : "▶ Lecture"}
+        {isSolving ? "Calcul..." : isPlaying ? "Pause" : "Lecture"}
       </button>
+
+      {isSolving && validation.valid && (
+        <p className="w-full rounded border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">
+          Resolution en calcul...
+        </p>
+      )}
+
+      {hasSolveCycle && !isSolving && validation.valid && (
+        <p className="w-full rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+          Resolution prete automatiquement. Utilise Lecture ou les etapes.
+        </p>
+      )}
 
       {!validation.valid && (
         <p className="w-full rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

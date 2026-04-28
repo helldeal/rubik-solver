@@ -11,9 +11,7 @@ import type {
 } from "../types/cube";
 import { CubeModel } from "../engine/cube/CubeModel";
 import { generateScramble, invertSequence } from "../engine/cube/moves";
-import { LBLSolver } from "../engine/solver/lbl";
-import { CFOPSolver } from "../engine/solver/cfop";
-import { KociembaSolver } from "../engine/solver/kociemba";
+import { solveCubeState } from "../engine/solver/cubejsAdapter";
 
 interface CubeStore {
   // Cube state
@@ -31,6 +29,7 @@ interface CubeStore {
   isPlaying: boolean;
   animationSpeed: number; // 0.25x to 4x
   solveMethod: SolveMethod;
+  isSolving: boolean;
   isAnimating: boolean;
   currentMove: MoveNotation | null;
 
@@ -69,6 +68,7 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
   isPlaying: false,
   animationSpeed: 1,
   solveMethod: "lbl",
+  isSolving: false,
   isAnimating: false,
   currentMove: null,
 
@@ -83,6 +83,7 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
       solveSnapshots: [state],
       currentStepIndex: 0,
       isPlaying: false,
+      isSolving: false,
       isAnimating: false,
       currentMove: null,
     });
@@ -115,6 +116,7 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
       solveSnapshots: [CubeModel.getSolvedState()],
       currentStepIndex: 0,
       isPlaying: false,
+      isSolving: false,
       isAnimating: false,
       currentMove: null,
     });
@@ -137,6 +139,7 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
       solveSnapshots: [scrambledState],
       currentStepIndex: 0,
       isPlaying: false,
+      isSolving: false,
     });
   },
 
@@ -154,30 +157,17 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
 
   startSolve: async (method: SolveMethod) => {
     const { cubeState, moveHistory, scrambleMoves } = get();
-    let steps: SolveStep[] = [];
-    let snapshots: CubeState[] = [cubeState];
-    const sourceMoves = moveHistory.length > 0 ? moveHistory : scrambleMoves;
+    set({ isSolving: true, isPlaying: false, solveSteps: [] });
 
-    const buildSnapshotsFromSteps = (
-      initialState: CubeState,
-      stepList: SolveStep[],
-    ): CubeState[] => {
-      const model = new CubeModel(initialState);
-      const states: CubeState[] = [model.getState()];
-
-      stepList.forEach((step) => {
-        model.applySequence(step.moves);
-        states.push(model.getState());
-      });
-
-      return states;
-    };
+    try {
+      let steps: SolveStep[] = [];
+      let snapshots: CubeState[] = [cubeState];
+      const sourceMoves = moveHistory.length > 0 ? moveHistory : scrambleMoves;
 
     const buildPlanFromMoves = (
       labels: Array<{ id: string; phaseLabel: string; description: string }>,
+      solutionMoves: MoveNotation[],
     ): { steps: SolveStep[]; snapshots: CubeState[] } => {
-      const solutionMoves =
-        sourceMoves.length > 0 ? invertSequence(sourceMoves) : [];
       const chunkSize = Math.max(
         1,
         Math.ceil(solutionMoves.length / labels.length),
@@ -204,9 +194,14 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
       return { steps: builtSteps, snapshots };
     };
 
+    const solutionMoves =
+      sourceMoves.length > 0
+        ? invertSequence(sourceMoves)
+        : await solveCubeState(cubeState);
+
     switch (method) {
       case "lbl":
-        if (sourceMoves.length > 0) {
+        {
           const plan = buildPlanFromMoves([
             {
               id: "lbl-1",
@@ -250,16 +245,13 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
               description:
                 "Dernier segment de la solution inverse: retour à l'état résolu.",
             },
-          ]);
+          ], solutionMoves);
           steps = plan.steps;
           snapshots = plan.snapshots;
           break;
         }
-        steps = LBLSolver.solve();
-        snapshots = buildSnapshotsFromSteps(cubeState, steps);
-        break;
       case "cfop":
-        if (sourceMoves.length > 0) {
+        {
           const plan = buildPlanFromMoves([
             {
               id: "cfop-1",
@@ -284,16 +276,13 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
               description:
                 "Dernier segment de la solution inverse: cube résolu.",
             },
-          ]);
+          ], solutionMoves);
           steps = plan.steps;
           snapshots = plan.snapshots;
           break;
         }
-        steps = CFOPSolver.solve();
-        snapshots = buildSnapshotsFromSteps(cubeState, steps);
-        break;
       case "kociemba":
-        if (sourceMoves.length > 0) {
+        {
           const plan = buildPlanFromMoves([
             {
               id: "kociemba-1",
@@ -307,25 +296,36 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
               description:
                 "Segment 2 de la solution inverse: finalisation vers l'état résolu.",
             },
-          ]);
+          ], solutionMoves);
           steps = plan.steps;
           snapshots = plan.snapshots;
           break;
         }
-        steps = KociembaSolver.solve();
-        snapshots = buildSnapshotsFromSteps(cubeState, steps);
-        break;
     }
 
-    set({
-      solveSteps: steps,
-      solveSnapshots: snapshots,
-      currentStepIndex: 0,
-      solveMethod: method,
-      isPlaying: false,
-      isAnimating: false,
-      currentMove: null,
-    });
+      set({
+        solveSteps: steps,
+        solveSnapshots: snapshots,
+        currentStepIndex: 0,
+        solveMethod: method,
+        isSolving: false,
+        isPlaying: false,
+        isAnimating: false,
+        currentMove: null,
+      });
+    } catch (error) {
+      console.error("Unable to solve cube", error);
+      set({
+        solveSteps: [],
+        solveSnapshots: [cubeState],
+        currentStepIndex: 0,
+        solveMethod: method,
+        isSolving: false,
+        isPlaying: false,
+        isAnimating: false,
+        currentMove: null,
+      });
+    }
   },
 
   nextStep: () => {
@@ -381,3 +381,4 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
     });
   },
 }));
+

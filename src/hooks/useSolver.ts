@@ -14,6 +14,7 @@ export function useSolver() {
   const isPlaying = useCubeStore((s) => s.isPlaying);
   const animationSpeed = useCubeStore((s) => s.animationSpeed);
   const method = useCubeStore((s) => s.solveMethod);
+  const isSolving = useCubeStore((s) => s.isSolving);
 
   const startSolve = useCallback(
     async (solveMethod: SolveMethod) => {
@@ -56,6 +57,7 @@ export function useSolver() {
     isPlaying,
     animationSpeed,
     method,
+    isSolving,
     startSolve,
     nextStep,
     previousStep,
