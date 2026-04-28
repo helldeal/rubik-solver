@@ -46,7 +46,7 @@ export type MoveNotation =
   | "z'"
   | "z2";
 
-export type SolveMethod = "cubejs";
+export type SolveMethod = "lbl" | "cfop" | "kociemba";
 
 export interface SolveStep {
   id: string;

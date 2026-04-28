@@ -260,9 +260,11 @@ interface CubieProps {
 const Cubie: React.FC<CubieProps> = ({ position, faces, rotation }) => {
   const meshRef = React.useRef<THREE.Group>(null);
 
-  const CUBIE_SIZE = 0.88;
-  const STICKER_SIZE = 0.78;
-  const STICKER_OFFSET = CUBIE_SIZE / 2 + 0.01;
+  // Reduce gaps between cubies: increase cubie size and sticker size,
+  // while keeping stickers slightly offset from the surface.
+  const CUBIE_SIZE = 0.96;
+  const STICKER_SIZE = 0.88;
+  const STICKER_OFFSET = CUBIE_SIZE / 2 + 0.002;
 
   return (
     <group ref={meshRef} position={position} rotation={rotation}>
